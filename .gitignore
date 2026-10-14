@@ -1,0 +1,14 @@
+node_modules/
+.runtime/
+.sites-runtime/
+.wrangler/
+.qa/
+.qa-*.png
+.env
+.env.*
+!.env.example
+*.log
+site-package.tar.gz
+Thumbs.db
+.DS_Store
+backups/

@@ -1,0 +1,30 @@
+name: zhixing-cabin
+
+services:
+  app:
+    image: zhixing-cabin:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 30s
+    ports:
+      - "127.0.0.1:${DOCKER_PORT:-4181}:4173"
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: "4173"
+      AI_PROVIDER: "${AI_PROVIDER:-rules}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      OPENAI_MODEL: "${OPENAI_MODEL:-gpt-4o-mini}"
+      OPENAI_BASE_URL: "${OPENAI_BASE_URL:-https://api.openai.com/v1/chat/completions}"
+      LOCAL_MODEL_URL: "${LOCAL_MODEL_URL:-}"
+      LOCAL_MODEL_NAME: "${LOCAL_MODEL_NAME:-local-model}"
+      MODEL_TIMEOUT_MS: "${MODEL_TIMEOUT_MS:-8000}"
+      AGENT_STEP_DELAY_MS: "${AGENT_STEP_DELAY_MS:-140}"
+    volumes:
+      - runtime-data:/app/.runtime
+
+volumes:
+  runtime-data:

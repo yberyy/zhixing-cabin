@@ -1,0 +1,24 @@
+{
+  "id": "mira",
+  "name": "Mira",
+  "role": "生活管家",
+  "accent": "coral",
+  "initial": "M",
+  "enabled": true,
+  "skill": "rhythm-check",
+  "instruction": "mira.md",
+  "capabilities": ["日程平衡", "习惯设计", "精力管理", "负载检查"],
+  "tools": {
+    "state:read": "allow",
+    "tasks:create": { "risk": "low", "maxPerRun": 1 },
+    "tasks:update": "deny",
+    "tasks:archive": { "risk": "high", "requiresConfirmation": true, "maxPerRun": 1 },
+    "schedule:reblock": { "risk": "high", "requiresConfirmation": true, "maxPerRun": 1 },
+    "goals:recalibrate": "deny"
+  },
+  "protocol": {
+    "input": ["goal", "context.state.habits", "context.state.tasks", "handoff.payload.estimatedMinutes"],
+    "output": ["summary", "steps", "proposals", "handoffs", "constraints", "notes", "sources", "metrics"]
+  },
+  "routing": ["睡", "作息", "运动", "跑步", "健身", "饮食", "散步", "生活", "精力", "早睡", "起床", "健康", "日程", "安排", "时间块", "节奏"]
+}

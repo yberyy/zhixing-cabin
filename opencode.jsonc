@@ -1,0 +1,32 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // OpenCode 开发期 Agent 层。
+  // - Agent 定义（含提示词与工具权限）：.opencode/agents/*.md
+  // - 领域/开发 Skill：.opencode/skills/*/SKILL.md（自动发现，无需在此登记）
+  // - 产品运行时 Agent：server/agents/（另一套，角色一致用途不同，见 AGENTS.md）
+  // 本文件只保留命令、监听与全局权限，Agent 相关字段统一在 markdown agent 中维护。
+
+  "commands": {
+    "check": {
+      "description": "运行知行舱语法检查与全部测试",
+      "template": "加载 quality-testing skill，运行 npm.cmd run check，并只汇报实际执行的检查结果。"
+    },
+    "dev": {
+      "description": "启动服务并检查健康状态",
+      "template": "启动 npm.cmd run dev，检查 /api/v1/health 与 /api/v1/agents，汇报地址、Provider 和降级状态。"
+    },
+    "trace": {
+      "description": "检查最近一次多 Agent 运行轨迹",
+      "template": "读取 GET /api/v1/agents/runs；如有记录，再读取最近一次详情并汇报 plan、calls、conflicts、proposals、memory 与 result。不要创建新运行或修改业务数据。"
+    }
+  },
+
+  "watcher": {
+    "ignore": [".runtime/**", ".qa/**", "node_modules/**"]
+  },
+
+  "permissions": [
+    { "action": "shell", "resource": "git push *", "effect": "ask" }
+  ]
+}

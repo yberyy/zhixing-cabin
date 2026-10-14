@@ -1,0 +1,32 @@
+flowchart TB
+  Goal[用户目标] --> Plan[Orchestrator 生成计划]
+  Plan --> Select{选择专业 Agent}
+  Select -->|含学习依赖| Seq[串行执行]
+  Select -->|无依赖| Par[并行执行]
+  Seq --> Atlas[Atlas]
+  Par --> Atlas
+  Seq --> Mira[Mira]
+  Par --> Mira
+  Seq --> Nova[Nova]
+  Par --> Nova
+  Atlas --> Bus[(Message Bus)]
+  Mira --> Bus
+  Nova --> Bus
+  Atlas --> Mem[(Shared Memory)]
+  Mira --> Mem
+  Nova --> Mem
+  Bus --> Merge[Orchestrator 合并]
+  Mem --> Merge
+  Atlas -.handoff.-> Mira
+  Mira -.handoff.-> Nova
+  Merge --> Conflict{存在冲突?}
+  Conflict -->|是| Resolve[标注来源并调和]
+  Conflict -->|否| Result[最终方案]
+  Resolve --> Result
+  Result --> Risk{高影响动作?}
+  Risk -->|是| Confirm[等待用户确认]
+  Risk -->|否| Done[完成]
+  Confirm -->|批准| Apply[工具层执行]
+  Confirm -->|拒绝| Done
+  Apply --> Done
+  Merge --> Trace[(Run Repository 持久化)]

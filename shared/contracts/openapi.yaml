@@ -1,0 +1,580 @@
+openapi: 3.1.0
+info:
+  title: 知行舱 API
+  version: 0.2.0
+  description: 个人学习与生活多 Agent 协作平台的 REST 契约。Agent 运行轨迹与确认流程自 0.2.0 起提供。
+servers:
+  - url: /api/v1
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      responses:
+        '200': { description: 服务健康 }
+  /state:
+    get:
+      operationId: getState
+      responses:
+        '200':
+          description: 完整工作台状态
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppState' }
+  /tasks:
+    post:
+      operationId: createTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateTask' }
+      responses:
+        '201': { description: 已创建 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /tasks/{taskId}:
+    patch:
+      operationId: updateTask
+      description: 修改任务字段（名称、领域、时长、负责人、状态）。归档任务不可修改。
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateTask' }
+      responses:
+        '200': { description: 已更新 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      operationId: archiveTask
+      description: 归档任务（软删除）。任务从工作台状态隐藏，但保留数据，可通过 restore 恢复。
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 已归档
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Task' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /tasks/archived:
+    get:
+      operationId: listArchivedTasks
+      description: 列出已归档任务，用于恢复。
+      responses:
+        '200':
+          description: 已归档任务列表
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [tasks]
+                properties:
+                  tasks: { type: array, items: { $ref: '#/components/schemas/Task' } }
+  /tasks/{taskId}/restore:
+    post:
+      operationId: restoreTask
+      description: 从归档箱恢复任务。
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 已恢复
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Task' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /habits/{habitId}/toggle:
+    post:
+      operationId: toggleHabit
+      parameters:
+        - in: path
+          name: habitId
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: 已切换 }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /reviews:
+    post:
+      operationId: createReview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mood]
+              properties:
+                win: { type: string, maxLength: 500 }
+                adjust: { type: string, maxLength: 500 }
+                mood: { type: integer, minimum: 1, maximum: 5 }
+      responses:
+        '201': { description: 已保存 }
+  /agents:
+    get:
+      operationId: getAgentSystem
+      description: 返回当前 Provider、Agent 注册表与运行统计。
+      responses:
+        '200':
+          description: Agent 系统描述
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentSystem' }
+  /agents/{agentId}/dispatch:
+    post:
+      operationId: dispatchAgent
+      description: 兼容旧版的单 Agent 派发，内部经 Orchestrator 执行且禁用 handoff。
+      parameters:
+        - in: path
+          name: agentId
+          required: true
+          schema: { type: string, enum: [atlas, mira, nova, auto] }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [command]
+              properties:
+                command: { type: string, minLength: 2, maxLength: 500 }
+      responses:
+        '202':
+          description: 已处理
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LegacyDispatchResult' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /agents/runs:
+    post:
+      operationId: createAgentRun
+      description: 创建一次多 Agent 协作。默认异步返回 running 轨迹，可轮询详情；`sync=true` 或 `?sync=1` 时等待结束后返回终态。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateRun' }
+      responses:
+        '202':
+          description: 已创建运行
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentRun' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+    get:
+      operationId: listAgentRuns
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: 运行摘要列表
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [runs]
+                properties:
+                  runs: { type: array, items: { $ref: '#/components/schemas/RunSummary' } }
+  /agents/runs/{runId}:
+    get:
+      operationId: getAgentRun
+      parameters:
+        - in: path
+          name: runId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 运行轨迹详情
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentRun' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /agents/runs/{runId}/confirm:
+    post:
+      operationId: confirmAgentRun
+      description: 确认或拒绝待处理的高影响建议。同一运行的确认串行处理；不受支持的动作类型返回 400 PROPOSAL_NOT_ACTIONABLE，且不修改任何状态。
+      parameters:
+        - in: path
+          name: runId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConfirmRun' }
+      responses:
+        '200':
+          description: 已处理，返回更新后的轨迹
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentRun' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 该运行没有待确认事项 }
+components:
+  responses:
+    BadRequest:
+      description: 输入无效
+    NotFound:
+      description: 资源不存在
+  schemas:
+    Task:
+      type: object
+      required: [id, title, category, duration, assignee, status, createdAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        category: { type: string, enum: [学习, 生活, 成长] }
+        duration: { type: string }
+        assignee: { type: string }
+        status: { type: string, enum: [todo, doing, done] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time, description: 最后一次修改时间 }
+        archivedAt: { type: string, format: date-time, description: 软删除时间；存在即为已归档 }
+        archivedBy: { type: string, description: 归档来源：user 或 Agent id }
+        source: { type: string, enum: [agent] }
+        agentId: { type: string }
+        origin: { type: string, description: 产生该任务的建议 id }
+    UpdateTask:
+      type: object
+      minProperties: 1
+      properties:
+        title: { type: string, minLength: 1, maxLength: 60 }
+        category: { type: string, enum: [学习, 生活, 成长] }
+        duration: { type: string, minLength: 1, maxLength: 20 }
+        assignee: { type: string, minLength: 1, maxLength: 20 }
+        status: { type: string, enum: [todo, doing, done] }
+    CreateTask:
+      type: object
+      required: [title, category, duration, assignee]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 60 }
+        category: { type: string, enum: [学习, 生活, 成长] }
+        duration: { type: string }
+        assignee: { type: string }
+    AppState:
+      type: object
+      required: [tasks, habits, agents, reviews]
+      properties:
+        tasks: { type: array, items: { $ref: '#/components/schemas/Task' } }
+        habits: { type: array, items: { type: object } }
+        agents: { type: array, items: { type: object } }
+        reviews: { type: array, items: { type: object } }
+    ProviderInfo:
+      type: object
+      required: [requested, used, label, degraded]
+      properties:
+        requested: { type: string, enum: [rules, local, openai] }
+        used: { type: string, enum: [rules, local, openai] }
+        label: { type: string }
+        mode: { type: string }
+        available: { type: boolean }
+        degraded: { type: boolean }
+        reason: { type: [string, 'null'] }
+    AgentDescriptor:
+      type: object
+      required: [id, name, role, status, capabilities, tools, protocol, instruction]
+      properties:
+        id: { type: string, pattern: '^[a-z][a-z0-9-]*$' }
+        name: { type: string }
+        role: { type: string }
+        accent: { type: string }
+        initial: { type: string }
+        status: { type: string, enum: [idle, working, error] }
+        displayStatus: { type: string }
+        currentTask: { type: string }
+        lastError: { type: [string, 'null'] }
+        capabilities: { type: array, items: { type: string } }
+        tools: { type: object, additionalProperties: true }
+        protocol:
+          type: object
+          properties:
+            input: { type: array, items: { type: string } }
+            output: { type: array, items: { type: string } }
+        skill: { type: string, description: 具名技能 id }
+        skillLabel: { type: string }
+        routing: { type: array, items: { type: string }, description: 领域路由关键词 }
+        routingDefault: { type: boolean }
+        definitionFile: { type: string }
+        instructionFile: { type: string }
+        instruction: { type: string }
+    OrchestratorInfo:
+      type: object
+      required: [id, name, role, instruction]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        role: { type: string }
+        instruction: { type: string }
+        instructionFile: { type: string }
+        capabilities: { type: array, items: { type: string } }
+    AgentSystem:
+      type: object
+      required: [provider, agents, capabilities]
+      properties:
+        provider: { $ref: '#/components/schemas/ProviderInfo' }
+        orchestrator: { $ref: '#/components/schemas/OrchestratorInfo' }
+        agents: { type: array, items: { $ref: '#/components/schemas/AgentDescriptor' } }
+        capabilities:
+          type: object
+          properties:
+            handoff: { type: boolean }
+            sharedMemory: { type: boolean }
+            confirmation: { type: boolean }
+            parallel: { type: boolean }
+            failureIsolation: { type: boolean }
+        runStatuses: { type: array, items: { type: string } }
+        runs:
+          type: object
+          properties:
+            total: { type: integer }
+            byStatus: { type: object, additionalProperties: { type: integer } }
+    CreateRun:
+      type: object
+      required: [goal]
+      properties:
+        goal: { type: string, minLength: 2, maxLength: 500 }
+        strategy: { type: string, enum: [auto, sequential, parallel], default: auto }
+        agentIds:
+          type: array
+          items: { type: string, pattern: '^[a-z][a-z0-9-]*$' }
+        allowHandoff: { type: boolean, default: true }
+        sync: { type: boolean, description: 为 true 时等待运行结束再返回 }
+    RunPlanTask:
+      type: object
+      properties:
+        id: { type: string }
+        agentId: { type: string }
+        title: { type: string }
+        dependsOn: { type: array, items: { type: string } }
+    RunPlan:
+      type: object
+      properties:
+        id: { type: string }
+        summary: { type: string }
+        strategy: { type: string, enum: [sequential, parallel] }
+        tasks: { type: array, items: { $ref: '#/components/schemas/RunPlanTask' } }
+    RunStep:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        detail: { type: string }
+        risk: { type: string, enum: [low, high] }
+        source: { type: string }
+    RunCall:
+      type: object
+      required: [id, order, agentId, status]
+      properties:
+        id: { type: string }
+        order: { type: integer }
+        agentId: { type: string }
+        agentName: { type: string }
+        title: { type: string }
+        viaHandoff:
+          type: [object, 'null']
+          properties:
+            from: { type: string }
+            reason: { type: string }
+        status: { type: string, enum: [running, completed, failed] }
+        input: { type: object }
+        output:
+          type: [object, 'null']
+          properties:
+            summary: { type: string }
+            steps: { type: array, items: { $ref: '#/components/schemas/RunStep' } }
+            sources: { type: array, items: { type: string } }
+            notes: { type: array, items: { type: string } }
+            constraints: { type: array, items: { $ref: '#/components/schemas/RunConstraint' } }
+            metrics: { type: object, additionalProperties: true }
+        error: { type: [string, 'null'] }
+        provider: { type: [string, 'null'] }
+        degraded: { type: boolean }
+        degradationReason: { type: [string, 'null'], description: 本次调用降级的具体原因 }
+        startedAt: { type: string, format: date-time }
+        finishedAt: { type: [string, 'null'] }
+        durationMs: { type: [integer, 'null'] }
+    RunMessage:
+      type: object
+      properties:
+        id: { type: string }
+        at: { type: string, format: date-time }
+        from: { type: string }
+        to: { type: string }
+        type: { type: string, enum: [goal, plan, task, handoff, handoff-request, result, error, constraint, confirmation] }
+        summary: { type: string }
+        payload: { type: object, additionalProperties: true }
+    RunConstraint:
+      type: object
+      required: [id, label]
+      properties:
+        id: { type: string }
+        label: { type: string }
+        detail: { type: string }
+        agentId: { type: string, description: 约束声明者 }
+        at: { type: string, format: date-time }
+    RunMemory:
+      type: object
+      properties:
+        runId: { type: string }
+        goal: { type: [string, 'null'] }
+        facts:
+          type: array
+          items:
+            type: object
+            properties:
+              key: { type: string }
+              value: {}
+              source: { type: string }
+              at: { type: string, format: date-time }
+              history: { type: array, items: { type: object } }
+        constraints: { type: array, items: { $ref: '#/components/schemas/RunConstraint' } }
+        conflicts: { type: array, items: { $ref: '#/components/schemas/RunConflict' } }
+    RunConflict:
+      type: object
+      properties:
+        id: { type: string }
+        agents: { type: array, items: { type: string } }
+        topic: { type: string }
+        detail: { type: string }
+        resolution: { type: string }
+    RunProposal:
+      type: object
+      required: [id, agentId, type, risk, status]
+      properties:
+        id: { type: string }
+        agentId: { type: string }
+        type: { type: string, enum: [create_task, update_task, reschedule_block, delete_task, goal_recalibration] }
+        risk: { type: string, enum: [low, high] }
+        requiresConfirmation: { type: boolean }
+        title: { type: string }
+        detail: { type: string }
+        payload: { type: object, additionalProperties: true }
+        status: { type: string, enum: [pending, applied, rejected, failed, deferred], description: deferred 表示本轮超出确认队列上限、可在轨迹中单独执行 }
+        priority: { type: integer, description: 确认队列排序权重，越小越重要 }
+        deferredReason: { type: string, description: 未列入确认队列的原因 }
+        actionable: { type: boolean, description: 是否可执行；不受支持的动作类型为 false }
+        blockedReason: { type: string, description: 不可执行时的原因说明 }
+    RunAppliedAction:
+      type: object
+      properties:
+        id: { type: string }
+        agentId: { type: string }
+        type: { type: string }
+        effect:
+          type: string
+          description: 实际执行效果
+          enum: [created_task, updated_task, archived_task, created_adjustment_task, recorded_goal_focus]
+        summary: { type: string }
+        targetId: { type: string }
+        appliedAt: { type: string, format: date-time }
+        confirmed: { type: boolean }
+    RunResult:
+      type: object
+      properties:
+        summary: { type: string }
+        recommendations:
+          type: array
+          items:
+            type: object
+            properties:
+              title: { type: string }
+              detail: { type: string }
+              source: { type: string }
+              agentId: { type: [string, 'null'] }
+        notes: { type: array, items: { type: string } }
+        durationMs: { type: integer }
+    RunSummary:
+      type: object
+      required: [id, goal, status, strategy, createdAt]
+      properties:
+        id: { type: string }
+        goal: { type: string }
+        status: { type: string }
+        strategy: { type: string }
+        provider: { $ref: '#/components/schemas/ProviderInfo' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        finishedAt: { type: [string, 'null'] }
+        callCount: { type: integer }
+        agentIds: { type: array, items: { type: string } }
+        handoffCount: { type: integer }
+        pendingConfirmations: { type: integer }
+        conflictCount: { type: integer }
+        error: { type: [object, 'null'] }
+    AgentRun:
+      type: object
+      required: [id, goal, status, strategy, provider, plan, calls, createdAt]
+      properties:
+        id: { type: string }
+        goal: { type: string }
+        source: { type: string }
+        strategy: { type: string, enum: [sequential, parallel] }
+        status: { type: string, enum: [running, completed, failed, awaiting_confirmation, partially_confirmed] }
+        provider: { $ref: '#/components/schemas/ProviderInfo' }
+        plan: { $ref: '#/components/schemas/RunPlan' }
+        calls: { type: array, items: { $ref: '#/components/schemas/RunCall' } }
+        messages: { type: array, items: { $ref: '#/components/schemas/RunMessage' } }
+        confirmations:
+          type: array
+          items:
+            type: object
+            properties:
+              proposalId: { type: string }
+              decision: { type: string, enum: [approve, reject] }
+              at: { type: string, format: date-time }
+        memory: { $ref: '#/components/schemas/RunMemory' }
+        conflicts: { type: array, items: { $ref: '#/components/schemas/RunConflict' } }
+        applied: { type: array, items: { $ref: '#/components/schemas/RunAppliedAction' } }
+        proposals: { type: array, items: { $ref: '#/components/schemas/RunProposal' } }
+        result: { oneOf: [{ $ref: '#/components/schemas/RunResult' }, { type: 'null' }] }
+        error:
+          type: [object, 'null']
+          properties:
+            code: { type: string }
+            message: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        finishedAt: { type: [string, 'null'] }
+    ConfirmRun:
+      type: object
+      description: 每个 proposalId 只能出现一次；必须明确指定 approve 或 reject，同一运行的确认按顺序处理。
+      required: [decisions]
+      properties:
+        decisions:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [proposalId, decision]
+            properties:
+              proposalId: { type: string }
+              decision: { type: string, enum: [approve, reject] }
+    LegacyDispatchResult:
+      type: object
+      required: [id, runId, agentId, agentName, status, steps]
+      properties:
+        id: { type: string }
+        runId: { type: string }
+        agentId: { type: string }
+        agentName: { type: string }
+        status: { type: string }
+        summary: { type: string }
+        steps: { type: array, items: { type: string } }
+        createdAt: { type: string, format: date-time }

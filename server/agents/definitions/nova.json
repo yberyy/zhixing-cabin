@@ -1,0 +1,25 @@
+{
+  "id": "nova",
+  "name": "Nova",
+  "role": "成长顾问",
+  "accent": "green",
+  "initial": "N",
+  "enabled": true,
+  "routingDefault": true,
+  "skill": "trend-review",
+  "instruction": "nova.md",
+  "capabilities": ["目标校准", "趋势洞察", "复盘提炼", "优先级调整"],
+  "tools": {
+    "state:read": "allow",
+    "tasks:create": { "risk": "low", "maxPerRun": 1 },
+    "tasks:update": "deny",
+    "tasks:archive": "deny",
+    "schedule:reblock": "deny",
+    "goals:recalibrate": { "risk": "high", "requiresConfirmation": true }
+  },
+  "protocol": {
+    "input": ["goal", "context.state.tasks", "context.state.reviews", "handoff.payload.loadMinutes"],
+    "output": ["summary", "steps", "proposals", "handoffs", "notes", "sources", "metrics"]
+  },
+  "routing": ["复盘", "目标", "习惯", "坚持", "趋势", "成长", "反思", "周报", "总结", "调整", "校准"]
+}

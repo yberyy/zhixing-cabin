@@ -1,0 +1,12 @@
+flowchart LR
+  User([个人用户]) --> Hub[知行舱]
+  Hub --> Orchestrator[Orchestrator 编排]
+  Orchestrator --> Atlas[Atlas 学习教练]
+  Orchestrator --> Mira[Mira 生活管家]
+  Orchestrator --> Nova[Nova 成长顾问]
+  Orchestrator --> Provider[ModelProvider]
+  Orchestrator --> Store[(个人成长数据)]
+  Atlas --> Orchestrator
+  Mira --> Orchestrator
+  Nova --> Orchestrator
+  Orchestrator --> User

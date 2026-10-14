@@ -1,0 +1,24 @@
+{
+  "id": "atlas",
+  "name": "Atlas",
+  "role": "学习教练",
+  "accent": "blue",
+  "initial": "A",
+  "enabled": true,
+  "skill": "study-coach",
+  "instruction": "atlas.md",
+  "capabilities": ["目标拆解", "知识地图", "间隔复习", "练习设计"],
+  "tools": {
+    "state:read": "allow",
+    "tasks:create": { "risk": "low", "maxPerRun": 2 },
+    "tasks:update": { "risk": "high", "requiresConfirmation": true, "maxPerRun": 1 },
+    "tasks:archive": "deny",
+    "schedule:reblock": "deny",
+    "goals:recalibrate": "deny"
+  },
+  "protocol": {
+    "input": ["goal", "context.state.tasks", "handoff.reason", "allowHandoff"],
+    "output": ["summary", "subtopics", "reviewPlan", "steps", "proposals", "handoffs", "notes", "sources", "metrics"]
+  },
+  "routing": ["学习", "复习", "考试", "课程", "数学", "英语", "单词", "阅读", "论文", "知识", "刷题", "作业", "绩点", "考研", "编程", "代码", "错题", "题目", "练习题", "真题", "大题"]
+}

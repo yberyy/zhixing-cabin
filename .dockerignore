@@ -1,0 +1,17 @@
+# Only runtime inputs enter the build context.
+**
+!Dockerfile
+!package.json
+!server/
+!server/**
+!dist/
+!dist/**
+!scripts/
+!scripts/healthcheck.mjs
+
+# Keep private files excluded even if placed below a runtime directory.
+**/.env
+**/.env.*
+**/node_modules
+**/.runtime
+**/*.log

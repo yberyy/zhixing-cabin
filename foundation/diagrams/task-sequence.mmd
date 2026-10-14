@@ -1,0 +1,34 @@
+sequenceDiagram
+  actor U as 用户
+  participant W as Web UI
+  participant C as API Client
+  participant S as REST API
+  participant O as Orchestrator
+  participant A as 专业 Agent
+  participant T as 工具层
+  participant R as Run Repository
+  U->>W: 输入目标并提交
+  W->>C: startAgentRun(goal)
+  C->>S: POST /api/v1/agents/runs
+  S->>O: createRun(goal)
+  O->>R: 保存 running 轨迹
+  S-->>C: 202 Accepted（running）
+  C-->>W: 展示运行中
+  O->>O: 生成计划 / 发布消息
+  O->>A: 派发任务（携带共享上下文）
+  A->>T: 低风险动作自动写入
+  A-->>O: 结构化结果 / handoff
+  O->>A: handoff 补齐缺失视角
+  O->>O: 检测冲突并调和
+  O->>R: 保存 calls / memory / result
+  W->>C: 轮询运行详情
+  C->>S: GET /agents/runs/:id
+  S-->>C: 轨迹与待确认项
+  C-->>W: 等待确认
+  U->>W: 确认 / 拒绝
+  W->>C: confirmAgentRun(decisions)
+  C->>S: POST /agents/runs/:id/confirm
+  S->>O: confirmRun(...)
+  O->>T: 执行获批的高影响动作
+  S-->>C: 更新后的轨迹
+  C-->>W: 成功 / 部分确认

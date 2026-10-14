@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f6f8f7">
+  <meta name="description" content="知行舱 - 个人学习与生活多 Agent 协作平台">
+  <title>知行舱</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Noto+Sans+SC:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="主导航">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div><strong>知行舱</strong><small>Mindful OS</small></div>
+      </div>
+
+      <nav class="nav-list">
+        <button class="nav-item active" data-view="overview"><i data-lucide="layout-dashboard"></i><span>今日总览</span></button>
+        <button class="nav-item" data-view="tasks"><i data-lucide="list-checks"></i><span>任务流</span><b id="taskNavCount">4</b></button>
+        <button class="nav-item" data-view="runs"><i data-lucide="sparkles"></i><span>协作中心</span><em id="runNavCount">0</em></button>
+        <button class="nav-item" data-view="focus"><i data-lucide="timer"></i><span>专注空间</span></button>
+        <button class="nav-item" data-view="habits"><i data-lucide="sprout"></i><span>习惯与复盘</span></button>
+        <button class="nav-item" data-view="archive"><i data-lucide="archive"></i><span>归档箱</span><em id="archiveNavCount">0</em></button>
+      </nav>
+
+      <div class="sidebar-spacer"></div>
+      <div class="week-card">
+        <div class="week-card-head"><span>本周节奏</span><strong id="weekScore">76%</strong></div>
+        <div class="week-bar"><span></span></div>
+        <p>比上周多完成 6 个行动</p>
+      </div>
+      <button class="profile-button" id="profileButton">
+        <span class="avatar">林</span>
+        <span><strong>林同学</strong><small>成长进行中</small></span>
+        <i data-lucide="chevrons-up-down"></i>
+      </button>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <button class="icon-button mobile-menu" id="menuButton" aria-label="打开导航"><i data-lucide="menu"></i></button>
+        <div class="date-block"><span id="fullDate"></span><strong id="greeting">早上好，林同学</strong></div>
+        <div class="top-actions">
+          <button class="status-pill"><span></span>3 个 Agent 在线</button>
+          <button class="icon-button" id="notificationButton" aria-label="通知"><i data-lucide="bell"></i><span class="notification-dot"></span></button>
+          <button class="primary-button" id="quickAddButton"><i data-lucide="plus"></i><span>新建任务</span><kbd>N</kbd></button>
+        </div>
+      </header>
+
+      <section class="view active" id="view-overview">
+        <div class="overview-heading">
+          <div><p class="eyebrow">TODAY, MAKE IT COUNT</p><h1>把精力用在重要的事上。</h1></div>
+          <div class="weather-note"><i data-lucide="sun"></i><span><strong>节奏舒展</strong><small>晚饭后留一点散步时间</small></span></div>
+        </div>
+
+        <div class="dashboard-grid">
+          <section class="panel agenda-panel">
+            <div class="section-head"><div><p class="eyebrow">AGENDA</p><h2>今日计划</h2></div><button class="text-button" data-view-target="tasks">查看全部 <i data-lucide="arrow-up-right"></i></button></div>
+            <div class="progress-summary"><div><strong id="doneCount">2</strong><span>/ <b id="totalCount">6</b> 项已完成</span></div><div class="progress-track"><span id="dayProgress"></span></div></div>
+            <div class="task-list" id="todayTaskList"></div>
+          </section>
+
+          <section class="panel focus-panel">
+            <div class="section-head"><div><p class="eyebrow">DEEP WORK</p><h2>专注时间</h2></div><button class="icon-button ghost" data-view-target="focus" aria-label="进入专注空间"><i data-lucide="maximize-2"></i></button></div>
+            <div class="timer-wrap">
+              <svg class="timer-ring" viewBox="0 0 160 160" aria-hidden="true"><circle cx="80" cy="80" r="69"></circle><circle id="timerArc" class="timer-arc" cx="80" cy="80" r="69"></circle></svg>
+              <div class="timer-copy"><strong id="timerDisplay">25:00</strong><span id="timerLabel">准备专注</span></div>
+            </div>
+            <div class="timer-task"><span class="dot learning"></span><div><small>本轮任务</small><strong id="focusTaskName">高等数学 · 极限与连续</strong></div><button class="icon-button ghost" id="cycleTaskButton" aria-label="切换专注任务"><i data-lucide="refresh-cw"></i></button></div>
+            <button class="focus-button" id="timerButton"><i data-lucide="play"></i><span>开始专注</span></button>
+          </section>
+
+          <section class="panel agents-panel">
+            <div class="section-head"><div><p class="eyebrow">AGENT CREW</p><h2>协作动态</h2></div><button class="text-button" data-view-target="runs">进入协作中心 <i data-lucide="arrow-right"></i></button></div>
+            <div class="agent-activity" id="agentActivity"></div>
+            <div class="command-box">
+              <i data-lucide="sparkles"></i>
+              <input id="agentCommand" type="text" placeholder="交给 Agent：帮我拆解明天的复习计划…" aria-label="给 Agent 下达任务">
+              <button id="sendCommand" aria-label="发送"><i data-lucide="arrow-up"></i></button>
+            </div>
+          </section>
+
+          <section class="panel habits-panel">
+            <div class="section-head"><div><p class="eyebrow">DAILY RHYTHM</p><h2>生活习惯</h2></div><span class="streak"><i data-lucide="flame"></i> 连续 12 天</span></div>
+            <div class="habit-row" id="habitRow"></div>
+          </section>
+
+          <section class="panel insight-panel">
+            <div class="insight-icon"><i data-lucide="lightbulb"></i></div>
+            <div><p class="eyebrow">MIRA 的观察</p><h3>你的高效时段正在提前</h3><p>最近 7 天，你在上午 9:00–11:00 的任务完成率提升了 18%。建议把最难的学习任务安排在这个时段。</p><button class="text-button" id="adoptSuggestion">采纳建议 <i data-lucide="arrow-right"></i></button></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="view-tasks">
+        <div class="page-heading"><div><p class="eyebrow">TASK FLOW</p><h1>任务流</h1><p>把大目标拆成今天能推进的一小步。</p></div><div class="heading-actions"><button class="secondary-button" data-view-target="archive"><i data-lucide="archive"></i>归档箱</button><button class="primary-button" data-add-task><i data-lucide="plus"></i>新建任务</button></div></div>
+        <div class="filter-row"><button class="filter active" data-filter="all">全部</button><button class="filter" data-filter="学习">学习</button><button class="filter" data-filter="生活">生活</button><button class="filter" data-filter="成长">成长</button></div>
+        <div class="kanban" id="kanbanBoard"></div>
+      </section>
+
+      <section class="view" id="view-runs">
+        <div class="page-heading">
+          <div><p class="eyebrow">AGENT COLLABORATION</p><h1>协作中心</h1><p>先了解每位专业 Agent 的职责与边界，再发起一次可追溯的协作。</p></div>
+          <div class="heading-actions"><span class="provider-badge" id="providerBadge"><i data-lucide="cpu"></i><span>规则引擎</span></span><button class="secondary-button" id="briefAllButton"><i data-lucide="radio"></i>一键晨会</button></div>
+        </div>
+
+        <section class="team-section" aria-labelledby="teamTitle">
+          <div class="section-head"><div><p class="eyebrow">MEET THE TEAM</p><h2 id="teamTitle">专业 Agent 与权限</h2><p class="team-intro">每位 Agent 只处理自己的专业领域；需要改变计划、日程或目标的操作，都会明确标记并等待你的确认。</p></div><span class="sync-label"><i data-lucide="shield-check"></i> 运行时配置已同步</span></div>
+          <div class="agent-cards" id="agentCards"></div>
+        </section>
+
+        <section class="panel run-console">
+          <div class="section-head"><div><p class="eyebrow">START A COLLABORATION</p><h2>现在想推进什么？</h2></div><details class="run-options"><summary><i data-lucide="settings-2"></i>高级设置</summary><label class="run-strategy">协作策略<select id="runStrategy"><option value="auto">自动</option><option value="sequential">串行</option><option value="parallel">并行</option></select></label></details></div>
+          <div class="run-goal-box">
+            <i data-lucide="target"></i>
+            <input id="runGoal" type="text" maxlength="500" placeholder="例如：帮我安排明天的数学复习和作息节奏" aria-label="协作目标">
+            <button id="runGoalSend" aria-label="开始协作"><i data-lucide="play"></i></button>
+          </div>
+          <p class="run-hint">高影响调整会先进入「等待确认」，不会直接修改你的数据。</p>
+        </section>
+
+        <div class="run-layout">
+          <section class="panel run-list-panel">
+            <div class="section-head"><h2>最近运行</h2><button class="icon-button ghost" id="runRefresh" aria-label="刷新运行列表"><i data-lucide="refresh-cw"></i></button></div>
+            <div class="run-list" id="runList"></div>
+          </section>
+          <section class="panel run-detail-panel" id="runDetail"></section>
+        </div>
+      </section>
+
+      <section class="view" id="view-archive">
+        <div class="page-heading"><div><p class="eyebrow">ARCHIVE</p><h1>归档箱</h1><p>删除是软删除：归档的任务可以随时恢复。</p></div><button class="secondary-button" data-view-target="tasks"><i data-lucide="arrow-left"></i>返回任务流</button></div>
+        <section class="panel archive-panel">
+          <div class="section-head"><div><p class="eyebrow">ARCHIVED</p><h2>已归档任务</h2></div><span class="sync-label"><i data-lucide="archive"></i> <span id="archiveCountLabel">0 项</span></span></div>
+          <div class="archive-list" id="archiveList"></div>
+        </section>
+      </section>
+
+      <section class="view" id="view-focus">
+        <div class="focus-room">
+          <p class="eyebrow">FOCUS ROOM</p><h1>只做一件事</h1><p id="focusRoomTask">高等数学 · 极限与连续</p>
+          <div class="focus-room-timer" id="focusRoomTimer">25:00</div>
+          <button class="focus-room-button" id="focusRoomButton"><i data-lucide="play"></i><span>开始这一轮</span></button>
+          <div class="focus-stats"><div><strong>3</strong><span>今日轮次</span></div><div><strong>72</strong><span>专注分钟</span></div><div><strong>86%</strong><span>完成度</span></div></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-habits">
+        <div class="page-heading"><div><p class="eyebrow">RHYTHM & REVIEW</p><h1>习惯与复盘</h1><p>不追求完美的一天，只保持清醒的节奏。</p></div><button class="secondary-button" id="reviewButton"><i data-lucide="pen-line"></i>写今日复盘</button></div>
+        <div class="habit-detail-grid" id="habitDetailGrid"></div>
+        <section class="panel review-panel"><div class="section-head"><div><p class="eyebrow">WEEKLY REVIEW</p><h2>本周趋势</h2></div><span>10.07 – 10.13</span></div><div class="week-chart" id="weekChart"></div></section>
+      </section>
+    </main>
+  </div>
+
+  <div class="mobile-nav" aria-label="移动端导航">
+    <button class="active" data-view="overview"><i data-lucide="layout-dashboard"></i><span>总览</span></button>
+    <button data-view="tasks"><i data-lucide="list-checks"></i><span>任务</span></button>
+    <button class="mobile-add" data-add-task aria-label="新建任务"><i data-lucide="plus"></i></button>
+    <button data-view="runs"><i data-lucide="sparkles"></i><span>协作</span></button>
+    <button data-view="habits"><i data-lucide="sprout"></i><span>习惯</span></button>
+  </div>
+
+  <div class="modal-backdrop" id="taskModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle">
+      <div class="modal-head"><div><p class="eyebrow">NEW ACTION</p><h2 id="taskModalTitle">添加一个行动</h2></div><button class="icon-button" data-close-modal aria-label="关闭"><i data-lucide="x"></i></button></div>
+      <form id="taskForm">
+        <label>任务名称<input id="taskTitle" required maxlength="60" placeholder="例如：完成线性代数习题 2.1"></label>
+        <div class="form-grid"><label>领域<select id="taskCategory"><option>学习</option><option>生活</option><option>成长</option></select></label><label>预计时长<select id="taskDuration"><option>25 分钟</option><option>45 分钟</option><option>60 分钟</option><option>90 分钟</option></select></label></div>
+        <label>交给谁<select id="taskAgent"><option value="self">我自己</option><option value="atlas">Atlas · 学习教练</option><option value="mira">Mira · 生活管家</option><option value="nova">Nova · 成长顾问</option></select></label>
+        <div class="modal-actions"><button type="button" class="secondary-button" data-close-modal>取消</button><button type="submit" class="primary-button"><i data-lucide="plus"></i>加入任务流</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="reviewModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="reviewModalTitle">
+      <div class="modal-head"><div><p class="eyebrow">DAILY REVIEW</p><h2 id="reviewModalTitle">今日复盘</h2></div><button class="icon-button" data-close-modal aria-label="关闭"><i data-lucide="x"></i></button></div>
+      <form id="reviewForm"><label>今天最值得肯定的事<textarea id="reviewWin" rows="3" placeholder="哪怕只是一件小事…"></textarea></label><label>明天想调整什么<textarea id="reviewAdjust" rows="3" placeholder="给明天的自己一个明确提示…"></textarea></label><div class="mood-picker"><span>今天的状态</span><div><button type="button" data-mood="低落">1</button><button type="button" data-mood="一般">2</button><button type="button" class="selected" data-mood="平稳">3</button><button type="button" data-mood="不错">4</button><button type="button" data-mood="很好">5</button></div></div><div class="modal-actions"><button type="button" class="secondary-button" data-close-modal>稍后再写</button><button type="submit" class="primary-button"><i data-lucide="check"></i>保存复盘</button></div></form>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="confirmModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+      <div class="modal-head"><div><p class="eyebrow">CONFIRM</p><h2 id="confirmModalTitle">确认操作</h2></div><button class="icon-button" data-close-modal aria-label="关闭"><i data-lucide="x"></i></button></div>
+      <p class="confirm-text" id="confirmText"></p>
+      <div class="modal-actions"><button type="button" class="secondary-button" data-close-modal>取消</button><button type="button" class="danger-button" id="confirmAccept"><i data-lucide="check"></i>确认归档</button></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"><i data-lucide="check-circle-2"></i><span></span></div>
+</body>
+</html>
